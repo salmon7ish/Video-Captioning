@@ -46,15 +46,21 @@ def extract_feats(params, model, load_image_fn):
         dst = params['model'] + '_' + video_id
         extract_frames(video, dst)
 
+        # glob.glob returns all the files with ending with jpg ie why asterisk is there, but it may not be in sorted order
         image_list = sorted(glob.glob(os.path.join(dst, '*.jpg')))
+        
+        # np linspace returns evenly spaced numbers over an interval, np.round rounds the number
         samples = np.round(np.linspace(
             0, len(image_list) - 1, params['n_frame_steps']))
         image_list = [image_list[int(sample)] for sample in samples]
+
+        # so this is image list 
         images = torch.zeros((len(image_list), C, H, W))
         for iImg in range(len(image_list)):
             img = load_image_fn(image_list[iImg])
             images[iImg] = img
         with torch.no_grad():
+            # squeeze removes useless dim 1, 3, 4 becomes 3, 4
             fc_feats = model(images.cuda()).squeeze()
         img_feats = fc_feats.cpu().numpy()
         # Save the inception features
@@ -89,6 +95,8 @@ if __name__ == '__main__':
     elif params['model'] == 'resnet152':
         C, H, W = 3, 224, 224
         model = pretrainedmodels.resnet152(pretrained='imagenet')
+        # So this loadTransformImage will transform image according to the model, so we pass model as an argument
+        # So whenever you have an image you have to give it to load_image_fn
         load_image_fn = utils.LoadTransformImage(model)
 
     elif params['model'] == 'inception_v4':
@@ -102,6 +110,6 @@ if __name__ == '__main__':
 
     model.last_linear = utils.Identity()
     model = nn.DataParallel(model)
-    
+
     model = model.cuda()
     extract_feats(params, model, load_image_fn)

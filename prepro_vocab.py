@@ -8,6 +8,7 @@ def build_vocab(vids, params):
     count_thr = params['word_count_threshold']
     # count up the number of words
     counts = {}
+    # vid is a key and caps is a value
     for vid, caps in vids.items():
         for cap in caps['captions']:
             ws = re.sub(r'[.!,;?]', ' ', cap).split()
@@ -40,11 +41,14 @@ def build_vocab(vids, params):
 
 
 def main(params):
+
     videos = json.load(open(params['input_json'], 'r'))['sentences']
     video_caption = {}
+    # initially make empty caption dict and then append the captions
     for i in videos:
         if i['video_id'] not in video_caption.keys():
             video_caption[i['video_id']] = {'captions': []}
+        #eg video_caption[100] = {"caption" : "dfsdsf  dsf"}is key which itself is dict, so we can access as 2d array 
         video_caption[i['video_id']]['captions'].append(i['caption'])
     # create the vocab
     vocab = build_vocab(video_caption, params)
@@ -55,6 +59,7 @@ def main(params):
     wtoi['<sos>'] = 1
     itow[1] = '<sos>'
 
+    # out is also a dict, so you dump 
     out = {}
     out['ix_to_word'] = itow
     out['word_to_ix'] = wtoi
@@ -70,7 +75,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # input json
-    parser.add_argument('--input_json', type=str, default='data/videodatainfo_2017.json',
+    parser.add_argument('--input_json', type=str, default='/media/data2/pawan/Video_caption/code/MSR-VTT/video-caption.pytorch-master/data/videodatainfo_2017.json',
                         help='msr_vtt videoinfo json')
     parser.add_argument('--info_json', default='data/info.json',
                         help='info about iw2word and word2ix')
@@ -81,5 +86,7 @@ if __name__ == "__main__":
                         help='only words that occur more than this number of times will be put in vocab')
 
     args = parser.parse_args()
+    # vars takes an argument as an object and returns a dictionary corresponding to that variable
     params = vars(args)  # convert to ordinary dict
     main(params)
+
