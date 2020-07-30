@@ -27,7 +27,7 @@ def parse_opt():
         default=['/media/data2/jayesh/Video_Captionig/video_captioing 1/resnet101'],
         help='path to the directory containing the preprocessed fc feats')
 
-    parser.add_argument('--c3d_feats_dir', type=str, default='/media/data2/jayesh/Video_Captionig/video_captioing 1/resnext101')
+    parser.add_argument('--c3d_feats_dir', type=str, default='/media/data2/jayesh/Video_Captionig/video_captioing 1/resnext_new')
     parser.add_argument(
         '--with_c3d', type=int, default=1, help='whether to use c3d features')
 
@@ -132,7 +132,7 @@ def parse_opt():
     parser.add_argument(
         '--save_checkpoint_every',
         type=int,
-        default=50,
+        default=100,
         help='how often to save a model checkpoint (in epoch)?')
     parser.add_argument(
         '--checkpoint_path',
