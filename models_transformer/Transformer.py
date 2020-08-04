@@ -39,9 +39,7 @@ class TransformerEncoderLayer(nn.Module):
 
 		self.activation = _get_activation_fn(activation)
 
-	## So what setstate does is that whatever your state is, it can set to a particular state in setstate
 	def __setstate__(self, state):
-		## I see if my object state has activation or not
 		if 'activation' not in state:
 			state['activation'] = F.relu
 		super(TransformerEncoderLayer, self).__setstate__(state)
