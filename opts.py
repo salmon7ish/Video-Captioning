@@ -7,7 +7,7 @@ def parse_opt():
     parser.add_argument(
         '--input_json',
         type=str,
-        default='/media/data2/pawan/Video_caption/code/MSR-VTT/video-caption.pytorch-master/data/videodatainfo_2017.json',
+        default='data/videodatainfo_2017.json',
         help='path to the json file containing video info')
     parser.add_argument(
         '--info_json',
@@ -24,17 +24,14 @@ def parse_opt():
         '--feats_dir',
         nargs='*',
         type=str,
-        default=['/media/data2/jayesh/Video_Captionig/video_captioing 1/resnet101'],
+        default=['data/resnet101'],
         help='path to the directory containing the preprocessed fc feats')
 
-    parser.add_argument('--c3d_feats_dir', type=str, default='/media/data2/jayesh/Video_Captionig/video_captioing 1/resnext_new')
+    parser.add_argument('--c3d_feats_dir', type=str, default='data/resnext_101')
     parser.add_argument(
         '--with_c3d', type=int, default=1, help='whether to use c3d features')
 
     parser.add_argument('--with_mean', type=int, default=0, help='take mean of all 3d feats and make 1 vector')
-
-    parser.add_argument('--adj_mat', type=str, default='/media/data2/jayesh/Video_Captionig/video_captioing 1/adjacency_matrix')
-    
     parser.add_argument(
         '--cached_tokens',
         type=str,
