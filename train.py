@@ -20,9 +20,7 @@ def cross_validate(model, crit, opt):
     dataset = VideoDataset(opt, 'val')
     print(len(dataset))
     _, _, seq_probs, seq_preds, labels, masks = test(model, crit, dataset, dataset.get_vocab(), opt)
-    print(seq_preds.shape, seq_probs.shape, labels.shape, masks.shape)
-    loss = crit(seq_probs, labels[:, 1:], masks[:, 1:])
-    print(loss)
+    
 
 def train(loader, model, crit, optimizer, lr_scheduler, opt, rl_crit=None):
     model.train()
