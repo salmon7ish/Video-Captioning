@@ -36,6 +36,7 @@ class VideoDataset(Dataset):
         self.feats_dir = opt["feats_dir"]
         self.c3d_feats_dir = opt['c3d_feats_dir']
         self.with_c3d = opt['with_c3d']
+        self.with_mean = opt['with_mean']
         print('load feats from %s' % (self.feats_dir))
         # load in the sequence data
         self.max_len = opt["max_len"]
@@ -53,11 +54,21 @@ class VideoDataset(Dataset):
         fc_feat = []
         for dir in self.feats_dir:
             fc_feat.append(np.load(os.path.join(dir, 'video%i.npy' % (ix))))
+               
         fc_feat = np.concatenate(fc_feat, axis=1)
+        
         if self.with_c3d == 1:
             c3d_feat = np.load(os.path.join(self.c3d_feats_dir, 'video%i.npy'%(ix)))
-            c3d_feat = np.mean(c3d_feat, axis=0, keepdims=True)
-            fc_feat = np.concatenate((fc_feat, np.tile(c3d_feat, (fc_feat.shape[0], 1))), axis=1)
+            if(self.with_mean == 1):
+                c3d_feat = np.mean(c3d_feat, axis=0, keepdims=True)
+                fc_feat = np.concatenate((fc_feat, np.tile(c3d_feat, (fc_feat.shape[0], 1))), axis=1)
+            else:
+                frames, dims = c3d_feat.shape
+                total_frames = frames * 16
+                points = np.round(np.linspace(0, total_frames, 40, endpoint=False))
+                points = points // 16
+                c3d_feat = np.concatenate(([c3d_feat[int(p), :].reshape(1, -1) for p in points]), axis = 0)
+
         label = np.zeros(self.max_len)
         mask = np.zeros(self.max_len)
         captions = self.captions['video%i'%(ix)]['final_captions']
@@ -77,6 +88,9 @@ class VideoDataset(Dataset):
 
         data = {}
         data['fc_feats'] = torch.from_numpy(fc_feat).type(torch.FloatTensor)
+        if(self.with_mean == 0):
+            data['feats_3d'] = torch.from_numpy(c3d_feat).type(torch.FloatTensor)
+            
         data['labels'] = torch.from_numpy(label).type(torch.LongTensor)
         data['masks'] = torch.from_numpy(mask).type(torch.FloatTensor)
         data['gts'] = torch.from_numpy(gts).long()

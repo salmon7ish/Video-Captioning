@@ -65,8 +65,11 @@ def main(params):
     out['word_to_ix'] = wtoi
     out['videos'] = {'train': [], 'val': [], 'test': []}
     videos = json.load(open(params['input_json'], 'r'))['videos']
-    for i in videos:
-        out['videos'][i['split']].append(int(i['id']))
+    for num, i in enumerate(videos):
+        if num in range(6513, 7010):
+            out['videos']['val'].append(int(i['id']))
+        else:
+            out['videos'][i['split']].append(int(i['id']))
     json.dump(out, open(params['info_json'], 'w'))
     json.dump(video_caption, open(params['caption_json'], 'w'))
 

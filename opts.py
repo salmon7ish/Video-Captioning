@@ -31,6 +31,10 @@ def parse_opt():
     parser.add_argument(
         '--with_c3d', type=int, default=1, help='whether to use c3d features')
 
+    parser.add_argument('--with_mean', type=int, default=0, help='take mean of all 3d feats and make 1 vector')
+
+    parser.add_argument('--adj_mat', type=str, default='/media/data2/jayesh/Video_Captionig/video_captioing 1/adjacency_matrix')
+    
     parser.add_argument(
         '--cached_tokens',
         type=str,
@@ -141,7 +145,7 @@ def parse_opt():
         help='directory to store checkpointed models')
 
     parser.add_argument(
-        '--gpu', type=str, default='0', help='gpu device number')
+        '--gpu', type=str, default='3', help='gpu device number')
 
     args = parser.parse_args()
 

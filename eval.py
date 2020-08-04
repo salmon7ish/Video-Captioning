@@ -6,6 +6,7 @@ from torch import nn
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from models import EncoderRNN, DecoderRNN, S2VTAttModel, S2VTModel
+from models_transformer import Transformer as Transformer
 from dataloader import VideoDataset
 import misc.utils as utils
 from misc.cocoeval import suppress_stdout_stderr, COCOScorer
@@ -35,29 +36,53 @@ def test(model, crit, dataset, vocab, opt):
     gts = convert_data_to_coco_scorer_format(gt_dataframe)
     results = []
     samples = {}
+    seq_probs_list = []
+    seq_preds_list = []
+    masks_list = []
+    labels_list = []
+
     for data in loader:
         # forward the model to get loss
         fc_feats = data['fc_feats'].cuda()
+        if(opt["with_mean"] == 0):
+                feats_3d = data['feats_3d'].cuda()
         labels = data['labels'].cuda()
         masks = data['masks'].cuda()
         video_ids = data['video_ids']
       
         # forward the model to also get generated samples for each image
         with torch.no_grad():
-            seq_probs, seq_preds = model(
-                fc_feats, mode='inference', opt=opt)
+            if(opt["with_mean"] == 1):
+                seq_probs, seq_preds = model(
+                    fc_feats, mode='inference', opt=opt)
+            else:
+                seq_probs, seq_preds = model(
+                    fc_feats, feats_3d, mode='inference', opt=opt)
 
         sents = utils.decode_sequence(vocab, seq_preds)
 
         for k, sent in enumerate(sents):
             video_id = video_ids[k]
             samples[video_id] = [{'image_id': video_id, 'caption': sent}]
+        
+        seq_preds_list.append(seq_preds)
+        seq_probs_list.append(seq_probs)
+        masks_list.append(masks)
+        labels_list.append(labels)
 
     with suppress_stdout_stderr():
         valid_score = scorer.score(gts, samples, samples.keys())
     results.append(valid_score)
     print(valid_score)
 
+    seq_probs_list = torch.cat(seq_probs_list, 0)
+    seq_preds_list = torch.cat(seq_preds_list, 0)
+    labels_list = torch.cat(labels_list, 0)
+    masks_list = torch.cat(masks_list, 0)
+
+    return valid_score, samples, seq_probs_list, seq_preds_list, labels_list, masks_list
+
+def save_results(valid_score, samples, opt):
     if not os.path.exists(opt["results_path"]):
         os.makedirs(opt["results_path"])
 
@@ -83,13 +108,15 @@ def main(opt):
                              input_dropout_p=opt["input_dropout_p"],
                              rnn_dropout_p=opt["rnn_dropout_p"], bidirectional=opt["bidirectional"])
         model = S2VTAttModel(encoder, decoder).cuda()
+    elif opt["model"] == "Transformer":
+        model = Transformer(opt["vocab_size"], opt["max_len"]).cuda()
     #model = nn.DataParallel(model)
     # Setup the model
     model.load_state_dict(torch.load(opt["saved_model"]))
     crit = utils.LanguageModelCriterion()
 
-    test(model, crit, dataset, dataset.get_vocab(), opt)
-
+    valid_score, samples, _, _, _, _ = test(model, crit, dataset, dataset.get_vocab(), opt)
+    save_results(valid_score, samples, opt)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -11,9 +11,18 @@ from torch.nn.utils import clip_grad_value_
 from dataloader import VideoDataset
 from misc.rewards import get_self_critical_reward, init_cider_scorer
 from models import DecoderRNN, EncoderRNN, S2VTAttModel, S2VTModel
+from models_transformer import Transformer as Transformer
 from torch import nn
 from torch.utils.data import DataLoader
+from eval import test
 
+def cross_validate(model, crit, opt):
+    dataset = VideoDataset(opt, 'val')
+    print(len(dataset))
+    _, _, seq_probs, seq_preds, labels, masks = test(model, crit, dataset, dataset.get_vocab(), opt)
+    print(seq_preds.shape, seq_probs.shape, labels.shape, masks.shape)
+    loss = crit(seq_probs, labels[:, 1:], masks[:, 1:])
+    print(loss)
 
 def train(loader, model, crit, optimizer, lr_scheduler, opt, rl_crit=None):
     model.train()
@@ -32,18 +41,30 @@ def train(loader, model, crit, optimizer, lr_scheduler, opt, rl_crit=None):
         for data in loader:
             torch.cuda.synchronize()
             fc_feats = data['fc_feats'].cuda()
+            if(opt["with_mean"] == 0):
+                feats_3d = data['feats_3d'].cuda()
             labels = data['labels'].cuda()
             masks = data['masks'].cuda()
 
             optimizer.zero_grad()
             if not sc_flag:
-                seq_probs, _ = model(fc_feats, labels, 'train')
+                if(opt["with_mean"] == 1):
+                    seq_probs, seq_preds = model(fc_feats, labels, 'train')
+                else:
+                    seq_probs, seq_preds = model(fc_feats, feats_3d, labels, 'train')
                 loss = crit(seq_probs, labels[:, 1:], masks[:, 1:])
+                print('shapes-->')
+                print(seq_probs.shape, labels.shape, masks.shape)
+            
             else:
-                seq_probs, seq_preds = model(
-                    fc_feats, mode='inference', opt=opt)
-                reward = get_self_critical_reward(model, fc_feats, data,
-                                                  seq_preds)
+                if(opt["with_mean"] == 1):
+                    seq_probs, seq_preds = model(
+                        fc_feats, mode='inference', opt=opt)
+                else:
+                    seq_probs, seq_preds = model(
+                        fc_feats, feats_3d, mode = 'inference', opt=opt)
+                reward = get_self_critical_reward(model, fc_feats, data, seq_preds)
+                
                 print(reward.shape)
                 loss = rl_crit(seq_probs, seq_preds,
                                torch.from_numpy(reward).float().cuda())
@@ -63,6 +84,7 @@ def train(loader, model, crit, optimizer, lr_scheduler, opt, rl_crit=None):
                       (iteration, epoch, np.mean(reward[:, 0])))
 
         if epoch % opt["save_checkpoint_every"] == 0:
+            cross_validate(model, crit, opt)
             model_path = os.path.join(opt["checkpoint_path"],
                                       'model_%d.pth' % (epoch))
             model_info_path = os.path.join(opt["checkpoint_path"],
@@ -105,6 +127,9 @@ def main(opt):
             rnn_dropout_p=opt["rnn_dropout_p"],
             bidirectional=opt["bidirectional"])
         model = S2VTAttModel(encoder, decoder)
+    elif opt["model"] == "Transformer":
+        model = Transformer(opt["vocab_size"], opt["max_len"])
+
     model = model.cuda()
     crit = utils.LanguageModelCriterion()
     rl_crit = utils.RewardCriterion()
