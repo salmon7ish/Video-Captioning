@@ -1,3 +1,6 @@
+# This code is cloned from another github repo https://github.com/xiadingZ/video-caption.pytorch
+The Transformer model is added but it DOESN'T work.
+
 # pytorch implementation of video captioning
 
 recommend installing pytorch and python packages using Anaconda
