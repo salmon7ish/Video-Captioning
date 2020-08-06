@@ -1,4 +1,4 @@
-# This code is cloned from another github repo https://github.com/xiadingZ/video-caption.pytorch
+# This code is cloned from another github repo https://github.com/xiadingZ/video-caption.pytorch and the Transformer model is added upon it.
 The model uses Transformer instead of LSTM/GRU/RNN to generate sentences.
 The model requires both 2D and 3D features.
 
