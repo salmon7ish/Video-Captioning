@@ -10,7 +10,7 @@ class PositionalEncoding(nn.Module):
 	"""docstring for PositionalEncoding"""
 	def __init__(self, d_model = 512, max_positions = 50):
 		super(PositionalEncoding, self).__init__()
-		self.embedd = torch.zeros(max_positions, d_model)
+		self.embedd = torch.zeros(max_positions, d_model, requires_grad = False)
 
 		for pos in range(max_positions):
 			for i in range(int(d_model / 2)):
@@ -270,7 +270,7 @@ class Transformer(nn.Module):
 				pos_decoder = pos_decoder.unsqueeze(0).repeat(batch_size, 1, 1) # 128xcurr_lenx512
 				tgt = torch.cat(until_now, 1) #128xcurr_lenx512
 				tgt =  tgt + pos_decoder # 128xcurr_lenx512
-				logprobs = F.log_softmax(self.Linear_layer(self.Decoder(encoded_feats, tgt, None)), dim = 2)[:, -1, :] #128x11k
+				logprobs = F.log_softmax(self.Linear_layer(self.Decoder(tgt, encoded_feats, None)), dim = 2)[:, -1, :] #128x11k
 				
 			seq_logprobs = torch.cat(seq_logprobs, 1)
 			seq_preds = torch.cat(seq_preds[1:], 1)
