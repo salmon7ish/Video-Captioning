@@ -1,5 +1,4 @@
 # This code is cloned from another github repo https://github.com/xiadingZ/video-caption.pytorch
-The Transformer model is added but it DOESN'T work.
 The model uses Transformer instead of LSTM/GRU/RNN to generate sentences.
 The model requires both 2D and 3D features.
 
